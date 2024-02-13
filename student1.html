@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Student Attendance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.0/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+      }
+
+      h1 {
+        text-align: center;
+      }
+
+      #attendance-list {
+        margin: 20px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f2f2f2;
+      }
+
+      input[type="radio"] {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #ddd;
+        border-radius: 50%;
+        outline: none;
+        margin-right: 5px;
+      }
+
+      input[type="radio"]:checked {
+        background-color: #2196f3;
+        border-color: #2196f3;
+      }
+
+      #searchInput {
+        width: 60%;
+        box-sizing: border-box;
+        margin: 10px auto;
+        padding: 10px;
+        display: block;
+      }
+
+      #submitBtn {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      input[type="radio"][value="เข้าเรียน"] {
+  background-color: #ffffff;
+  border-color: #000000;
+  color: white;
+}
+
+input[type="radio"][value="ไม่เข้าเรียน"] {
+  background-color: #ffffff;
+  border-color: #000000;
+  color: white;
+}
+
+
+input[type="radio"]:checked[value="เข้าเรียน"] {
+  background-color: #4caf50;
+  border-color: #4caf50;
+}
+
+input[type="radio"]:checked[value="ไม่เข้าเรียน"] {
+  background-color: #f44336;
+  border-color: #f44336;
+}
+#exportBtn {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>รายชื่อการเข้าเรียน</h1>
+    <button class="btn center"  id="exportBtn" onclick="exportData() ">
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+  Export Data
+</button>
+      
+  
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="ค้นหาชื่อ..."
+      oninput="filterTable()"
+    />
+    
+
+    <div id="attendance-list"></div>
+
+    <script>
+      function loadAttendanceData() {
+        fetch("http://127.0.0.1:5500/student_attendance.json")
+          .then((response) => response.json())
+          .then((data) => {
+            const listContainer = document.getElementById("attendance-list");
+
+            const table = document.createElement("table");
+
+            const headerRow = table.insertRow(0);
+            Object.keys(data[0]).forEach((key) => {
+              const th = document.createElement("th");
+              th.textContent = key;
+              headerRow.appendChild(th);
+            });
+
+            data.forEach((student) => {
+              const row = table.insertRow(-1);
+              Object.values(student).forEach((value, index) => {
+                const cell = row.insertCell(-1);
+                cell.textContent = value;
+
+                if (index >= 2 && index <= 5) {
+                  const radioInput = document.createElement("input");
+                  radioInput.type = "radio";
+                  radioInput.name = `attendance-${student["รหัสประจำตัว"]}-${
+                    index - 1
+                  }`;
+                  radioInput.value = "เข้าเรียน";
+                  cell.appendChild(radioInput);
+                  const label = document.createElement("label");
+                  label.textContent = "เข้าเรียน";
+                  cell.appendChild(label);
+
+                  const radioInput2 = document.createElement("input");
+                  radioInput2.type = "radio";
+                  radioInput2.name = `attendance-${student["รหัสประจำตัว"]}-${
+                    index - 1
+                  }`;
+                  radioInput2.value = "ไม่เข้าเรียน";
+                  cell.appendChild(radioInput2);
+                  const label2 = document.createElement("label");
+                  label2.textContent = "ไม่เข้าเรียน";
+                  cell.appendChild(label2);
+                }
+              });
+            });
+
+            listContainer.appendChild(table);
+          })
+          .catch((error) => console.error("Error loading the data:", error));
+      }
+
+      function submitAttendance() {
+        const table = document.querySelector("table");
+        const rows = table.querySelectorAll("tr");
+
+        for (let i = 1; i < rows.length; i++) {
+          const cells = rows[i].querySelectorAll("td");
+
+          for (let j = 2; j <= 5; j++) {
+            const radioValue = document.querySelector(
+              `input[name="attendance-${rows[i].cells[0].textContent}-${
+                j - 1
+              }"]:checked`
+            );
+
+            if (radioValue) {
+              data[i - 1][`สัปดาห์${j}`] = radioValue.value;
+            }
+          }
+        }
+
+        console.log("Updated attendance data:", data);
+      }
+
+      function filterTable() {
+        const input = document.getElementById("searchInput");
+        const filter = input.value.toUpperCase();
+        const table = document.querySelector("table");
+        const rows = table.querySelectorAll("tr");
+
+        for (let i = 1; i < rows.length; i++) {
+          const cells = rows[i].querySelectorAll("td");
+          let found = false;
+
+          for (let j = 0; j < cells.length; j++) {
+            const cellText = cells[j].textContent.toUpperCase();
+            if (cellText.indexOf(filter) > -1) {
+              found = true;
+              break;
+            }
+          }
+
+          rows[i].style.display = found ? "" : "none";
+        }
+      }
+
+      let data; // to store the original data
+      window.onload = function () {
+        fetch("http://127.0.0.1:5500/student_attendance.json")
+          .then((response) => response.json())
+          .then((responseData) => {
+            data = responseData; // store the original data
+            loadAttendanceData();
+          })
+          .catch((error) => console.error("Error loading the data:", error));
+      };
+
+function exportData() {
+        const table = document.querySelector("table");
+        const rows = table.querySelectorAll("tr");
+
+        const exportData = [];
+        rows.forEach((row, rowIndex) => {
+          const cells = row.querySelectorAll("td");
+          const rowData = {};
+
+          cells.forEach((cell, cellIndex) => {
+            const headerCell = table.rows[0].cells[cellIndex];
+            const headerText = headerCell.textContent.trim();
+
+            if (cellIndex >= 2 && cellIndex <= 5) {
+              const radioInput = cell.querySelector(
+                "input[type='radio']:checked"
+              );
+              rowData[`สัปดาห์${cellIndex - 1}`] = radioInput
+                ? radioInput.value
+                : "";
+            } else {
+              rowData[headerText] = cell.textContent.trim();
+            }
+          });
+
+          if (rowIndex !== 0) {
+            exportData.push(rowData);
+          }
+        });
+
+        const jsonData = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([jsonData], { type: "application/json" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "attendance_data.json";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    </script>
+  </body>
+</html>
